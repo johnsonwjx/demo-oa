@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>登录</title>
+<!-- 
+<script type="text/javascript"
+	src="http://localhost:8082/extjs/ext-all.js"></script>
+<link rel="stylesheet" type="text/css"
+	href="http://localhost:8082/extjs/resources/css/ext-all.css">
+ -->
+ <script type="text/javascript"
+	src="extjs/base/ext-all.js"></script>
+	 <script type="text/javascript"
+	src="extjs/base/ext-lang-zh_CN.js"></script>
+<link rel="stylesheet" type="text/css"
+	href="extjs/base/resources/css/ext-all.css">
+<link rel="stylesheet" type="text/css"
+	href="extjs/ux/statusbar/css/statusbar.css">
+
+<script type="text/javascript">
+	Ext.Loader.setConfig({
+		enabled : true
+	});
+	Ext.Loader.setPath({
+		'Ext.ux' : 'extjs/ux'
+	});
+
+	Ext.require([ 'Ext.form.Panel', 'Ext.form.field.Date',
+			'Ext.tip.QuickTipManager', 'Ext.ux.statusbar.StatusBar',
+			'Ext.ux.statusbar.ValidationStatus' ]);
+
+	Ext
+			.onReady(function() {
+				Ext.tip.QuickTipManager.init();
+				var fp;
+				function submitFn() {
+					if (fp.getForm().isValid()) {
+						var sb = Ext.getCmp('form-statusbar');
+						if (fp.items.getAt(0).getValue().length <= 5&&fp.items.getAt(0).getValue()!='admin') {
+							sb.setText('<font color="red">登录名必须大于5个字符</font>');
+							return;
+						}
+						sb.showBusy('登录中');
+						fp.getEl().mask();
+						fp.getForm().submit({
+							url : 'j_spring_security_check',
+							success : function() {
+								sb.setStatus({
+									text : '登录完成',
+									iconCls : '',
+									clear : true
+								});
+								fp.getEl().unmask();
+							}
+						});
+					}
+				}
+				fp = Ext
+						.create(
+								'Ext.FormPanel',
+								{
+									id : 'status-form',
+									title : '员工登录',
+									autoHeight : true,
+									width : 400,
+									labelWidth : 75,
+									standardSubmit : true,
+									bodyPadding : 10,
+									autoShow : true,
+								renderTo : Ext.getBody(),
+									defaults : {
+										anchor : '95%',
+										allowBlank : false,
+										selectOnFocus : true,
+										msgTarget : 'side'
+									},
+									items : [ {
+										xtype : 'textfield',
+										fieldLabel : '员工名',
+										name : 'j_username',
+										blankText : '员工名必须填写'
+									}, {
+										xtype : 'textfield',
+										name : 'j_password',
+										fieldLabel : '密码',
+										inputType : 'password',
+										blankText : '密码名必须填写'
+									} ],
+									dockedItems : [
+											{
+												xtype : 'toolbar',
+												dock : 'bottom',
+												ui : 'footer',
+												items : [ '->', {
+													text : '登录',
+													handler : submitFn
+												} ]
+											},
+											Ext
+													.create(
+															'Ext.ux.StatusBar',
+															{
+																dock : 'bottom',
+																id : 'form-statusbar',
+																defaultText : location.search == "?error=1" ? '<font color="red">登录错误</font>'
+																		: '输入提示',
+																plugins : Ext
+																		.create(
+																				'Ext.ux.statusbar.ValidationStatus',
+																				{
+																					form : 'status-form'
+																				})
+															}) ]
+								});
+				fp.center();
+				Ext.getBody().on('keypress', function(e) {
+					//监听键盘事件
+					if (e.charCode == Ext.EventObject.ENTER)
+						submitFn();
+				})
+			});
+</script>
+</head>
+</html>
