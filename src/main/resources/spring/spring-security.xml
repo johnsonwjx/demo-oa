@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans   
+            http://www.springframework.org/schema/beans/spring-beans-3.2.xsd  
+            http://www.springframework.org/schema/security   
+            http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+	<!-- 启用注解方式对方法的权限控制 use-expressions="true" 的意思是开启表达式 access-denied-page的意思是，当验证权限失败后会跳转到的页面 
+	<security:global-method-security
+		pre-post-annotations="enabled" secured-annotations="enabled"
+		jsr250-annotations="enabled" proxy-target-class="true">
+		<security:protect-pointcut access="Admin"
+			expression="execution(* xiong.service.RoleService.*(..))" />
+	</security:global-method-security>
+-->
+	<security:http pattern="*.jpg" security="none" />
+	<security:http pattern="*.png" security="none" />
+	<security:http pattern="*.gif" security="none" />
+	<security:http pattern="*.css" security="none" />
+	<security:http pattern="*.js" security="none" />
+
+	<!-- 验证码过滤器 -->
+	<bean id="validateCodeAuthenticationFilter"
+		class="xiong.web.filter.VolidateAuthCodeUsernamePasswordAuthenticationFilter">
+		<property name="authenticationSuccessHandler" ref="loginLogAuthenticationSuccessHandler"></property>
+		<property name="authenticationFailureHandler" ref="simpleUrlAuthenticationFailureHandler"></property>
+		<property name="authenticationManager" ref="authenticationManager"></property>
+	</bean>
+
+	<!-- 登录成功 -->
+	<bean id="loginLogAuthenticationSuccessHandler"
+		class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+		<property name="defaultTargetUrl" value="/main.html"></property>
+	</bean>
+
+	<!-- 登录失败 -->
+	<bean id="simpleUrlAuthenticationFailureHandler"
+		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+		<property name="defaultFailureUrl" value="/login.html?error=1"></property>
+	</bean>
+		
+	<security:http use-expressions="true" access-denied-page="/powermiss"
+		entry-point-ref="authenticationProcessingFilterEntryPoint">
+		<!-- 对登录页面，所有的用户都可以访问 -->
+		<security:intercept-url pattern="/login.html*"
+			access="permitAll" />
+		<security:intercept-url pattern="/role/*"
+			access="hasRole('ROLE_OPER')" />
+			
+	<security:intercept-url pattern="/employee/manager/*"
+			access="hasRole('EMP_OPER')" />
+			
+			<security:intercept-url pattern="/department/manager/*"
+			access="hasRole('DEPT_OPER')" />
+			
+		<!-- 对所有的资源，都必须要有COMM权限 才可以访问 -->
+		<security:intercept-url pattern="/*"
+			access="hasRole('COMM')" />
+
+		<!-- 使用自己的过滤器 -->
+		<!-- 下面的配置表示将自己的过滤器放在FORM_LOGIN_FILTER过滤链的最前面（可以这样来验证登录验证码） -->
+		<security:custom-filter ref="validateCodeAuthenticationFilter"
+			position="FORM_LOGIN_FILTER" />
+
+
+		<!-- 退出配置 -->
+		<security:logout invalidate-session="true"
+			logout-success-url="/login.html" logout-url="/auth/logout" />
+
+	</security:http>
+
+
+	<bean id="authenticationProcessingFilterEntryPoint"
+		class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+		<property name="loginFormUrl" value="/login.html"></property>
+	</bean>
+
+	<!-- 配置一个认证管理器 -->
+	<security:authentication-manager alias="authenticationManager">
+		<!-- 使用自定义的UserDetailService -->
+		<security:authentication-provider
+			user-service-ref="empDetailService">
+			<!-- 下面的内容就可注释掉了 -->
+			<!-- <security:user-service> -->
+			<!-- 这样的配置表示向系统中添加了一个用户 用户名和密码都为admin ,并且该用户拥有ROLE_USER角色（角色可以用逗号隔开） -->
+			<!-- <security:user name="admin" password="admin" authorities="ROLE_USER"/> -->
+			<!-- </security:user-service> -->
+		</security:authentication-provider>
+	</security:authentication-manager>
+
+</beans>  

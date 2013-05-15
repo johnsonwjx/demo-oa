@@ -1,0 +1,102 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="  
+        http://www.springframework.org/schema/util  
+        http://www.springframework.org/schema/util/spring-util-3.2.xsd  
+        http://www.springframework.org/schema/beans   
+        http://www.springframework.org/schema/beans/spring-beans-3.2.xsd  
+        http://www.springframework.org/schema/context   
+        http://www.springframework.org/schema/context/spring-context-3.2.xsd  
+        http://www.springframework.org/schema/mvc  
+       http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd">
+
+
+	<mvc:view-controller path="/" view-name="/login.html" />
+	<!-- 将OpenSessionInView 打开 -->
+	<bean id="openSessionInView"
+		class="org.springframework.orm.hibernate4.support.OpenSessionInViewInterceptor">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<!-- 处理在类级别上的@RequestMapping注解 -->
+	<bean
+		class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping">
+		<property name="interceptors">        <!-- 配置过滤器 -->
+			<list>
+				<ref bean="openSessionInView" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- 启动Spring MVC的注解功能，完成请求和注解POJO的映射,解决@ResponseBody乱码问题, 需要在annotation-driven和component-scan之前,否则乱码问题同样无法解决 -->
+	<bean
+		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				<bean
+					class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter" />
+				<bean
+					class="org.springframework.http.converter.StringHttpMessageConverter">
+					<property name="supportedMediaTypes">
+						<list>
+							<value>text/html;charset=UTF-8</value>
+						</list>
+					</property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<mvc:annotation-driven />
+	<!-- 开启controller注解支持 -->
+	<!-- 注：如果base-package=xiong.action 则注解事务不起作用 TODO 读源码 -->
+	<context:component-scan base-package="xiong.web.action">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Service" />
+	</context:component-scan>
+
+	<!-- 当在web.xml 中 DispatcherServlet使用 <url-pattern>/</url-pattern> 映射时，能映射静态资源 -->
+	<bean
+		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="order" value="1" />
+		<!--参数支持 -->
+		<property name="favorParameter" value="true"></property>
+		<property name="mediaTypes">
+			<map>
+				<entry key="json" value="application/json" />
+				<entry key="xml" value="application/xml" />
+				<entry key="html" value="text/html" />
+			</map>
+		</property>
+		<property name="viewResolvers">
+			<list>
+				<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+				<bean class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+					<property name="viewClass"
+						value="org.springframework.web.servlet.view.JstlView" />
+					<property name="prefix" value="/WEB-INF/jsp/" />
+					<property name="suffix" value=".jsp" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- 对静态资源文件的访问 -->
+	<mvc:resources mapping="/images/**" location="/WEB-INF/images/"
+		cache-period="3600" />
+	<mvc:resources mapping="/script/**" location="/WEB-INF/script/"
+		cache-period="3600" />
+	<mvc:resources mapping="/style/**" location="/WEB-INF/style/"
+		cache-period="3600" />
+	<mvc:resources mapping="/extjs/**" location="/WEB-INF/extjs/"
+		cache-period="3600" />
+	<mvc:resources location="/login.html*" mapping="/login.html"
+		cache-period="3600" />
+	<mvc:resources location="/main.html" mapping="/main.html"
+		cache-period="3600" />
+</beans>  
